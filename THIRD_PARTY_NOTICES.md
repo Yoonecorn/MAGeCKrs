@@ -81,8 +81,31 @@ as source records; they are not a MAGeCKrs repository URL.
 
 Authoritative upstream clarification or a reviewed licensing decision is still
 needed before claiming those issues are legally resolved. No dependency upgrade
-or substitution is performed here. Notice completeness in this task is limited
-to preserving the existing MAGeCK2 notice, the source Cephes notice and these two
-locked published-source records. A later distribution gate must inventory and
-preserve all applicable third-party material for its exact linked dependency set;
-this file does not claim a complete legal clearance of every dependency.
+or substitution is performed here. The records above preserve the MAGeCK2 and Cephes notices and these two locked
+published-source records; additional dependency disclosures follow below.
+This file does not claim complete legal clearance of every dependency.
+
+## Source-only dependency scope
+
+MAGeCKrs distributes its own source tree, without vendoring full dependency
+source trees or distributing a compiled executable. `Cargo.lock` records dependency
+versions and checksums; Cargo obtains dependencies during a build. This scope does
+not remove all notice duties. The MAGeCKrs MIT license does not relicense
+third-party packages, and this file does not claim complete external legal clearance.
+
+## Optional Metal dependency disclosures
+
+The publication decision accepts the following evidence-limited disclosures.
+Both packages declare MIT and occur in the optional Metal dependency path.
+Complete historical notice evidence was not found for these exact releases;
+no redistribution prohibition was identified in the reviewed evidence. This is a
+publication decision, not legal advice or a claim of complete legal clearance.
+
+- [block 0.1.6](docs/third-party/block-0.1.6/NOTICE.md): the exact archive lacks
+  complete release-specific notice text; the reviewed upstream notice work was
+  not merged for this release.
+- [malloc_buf 0.0.6](docs/third-party/malloc_buf-0.0.6/NOTICE.md): the exact archive
+  lacks complete release-specific notice text; a later upstream MIT notice exists,
+  but is not treated as proof that it applied to version 0.0.6.
+
+MAGeCKrs does not relicense either package. No external legal clearance is claimed.

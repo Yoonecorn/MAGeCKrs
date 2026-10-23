@@ -9,6 +9,7 @@ No compiled executable or application is distributed.
 
 ## Documentation
 
+- [MAGeCKrs Manuscript](docs/MAGeCKrs_Manuscript.pdf): manuscript and complete Supplementary Information.
 - [MAGeCKrs User Manual](docs/MAGeCKrs_User_Manual.pdf): complete workflows, command reference, and linked instructions.
 - [Synthetic examples](examples/campaign-a/README.md): small inputs and expected counts.
 - [Numerical contract](docs/numerical-contract.md): fitting and inference acceptance rules.

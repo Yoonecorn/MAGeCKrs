@@ -9,8 +9,7 @@ No compiled executable or application is distributed.
 
 ## Documentation
 
-- [User manual: Markdown](docs/MAGeCKrs_User_Manual.md): read online, including complete workflows and the command reference.
-- [User manual: PDF](docs/MAGeCKrs_User_Manual.pdf): numbered sections, contents, and linked instructions.
+- [MAGeCKrs User Manual](docs/MAGeCKrs_User_Manual.pdf): complete workflows, command reference, and linked instructions.
 - [Synthetic examples](examples/campaign-a/README.md): small inputs and expected counts.
 - [Numerical contract](docs/numerical-contract.md): fitting and inference acceptance rules.
 
@@ -32,6 +31,8 @@ No compiled executable or application is distributed.
 | `mle` | Count table and design matrix to coefficients and ordinary Wald results. |
 | UMI / unmapped / CNV options | Explicit opt-in interfaces described in the manual. |
 
+![MAGeCKrs workflows for guide counting, RRA comparisons, combined COUNT-to-test analysis, and MLE.](.github/assets/mageckrs-workflow.png)
+
 ## Performance overview
 
 These observations describe the tested datasets, hardware, and configurations.
@@ -39,7 +40,7 @@ Read the PC-9 RRA stage context first, then the separate complete-workflow compa
 
 **PC-9 RRA COUNT-stage context**
 
-![PC-9 RRA COUNT-stage component comparison: median runtime is 581.669345 s for Legacy MAGeCK and 163.834243 s for MAGeCKrs.](docs/assets/mageckrs-pc9-rra-count-stage.png)
+![PC-9 RRA COUNT-stage component comparison: median runtime is 581.669345 s for Legacy MAGeCK and 163.834243 s for MAGeCKrs.](.github/assets/mageckrs-pc9-rra-count-stage.png)
 
 *Figure S1a.* PC-9 RRA COUNT-stage component medians are **581.669345 s for Legacy MAGeCK** and **163.834243 s for MAGeCKrs**.
 COUNT is inside the primary timing boundary.
@@ -47,7 +48,7 @@ These component summaries are not stacked or additive, and this is not a complet
 
 **Complete-workflow runtimes**
 
-![Legacy MAGeCK versus MAGeCKrs median runtimes: PC-9 RRA 623.096344 versus 165.108136 s, runtime ratio 3.769137010; PC-9 MLE 241.969656 versus 65.914413 s, ratio 3.670967319; HCC827 MLE 237.9524685 versus 65.109550 s, ratio 3.654647721. HCC827 showed high aggregate agreement, but selected scientific outputs differed.](docs/assets/mageckrs-complete-workflow-runtimes.png)
+![Legacy MAGeCK versus MAGeCKrs median runtimes: PC-9 RRA 623.096344 versus 165.108136 s, runtime ratio 3.769137010; PC-9 MLE 241.969656 versus 65.914413 s, ratio 3.670967319; HCC827 MLE 237.9524685 versus 65.109550 s, ratio 3.654647721. HCC827 showed high aggregate agreement, but selected scientific outputs differed.](.github/assets/mageckrs-complete-workflow-runtimes.png)
 
 *Figure 2a-c.* Median runtimes below compare **Legacy MAGeCK with MAGeCKrs**, in that order.
 Runtime ratios use Legacy MAGeCK divided by MAGeCKrs.
@@ -61,7 +62,7 @@ They are descriptive ranges, not confidence intervals.
 The benchmark campaigns are not pooled.
 **HCC827 showed high aggregate agreement, but selected scientific outputs differed.**
 These runtime observations do not establish universal speedups, timing significance, or identical RRA or MLE scientific outputs.
-See the [user manual](docs/MAGeCKrs_User_Manual.md) for workflow instructions and interpretation limits.
+See the [user manual](docs/MAGeCKrs_User_Manual.pdf) for workflow instructions and interpretation limits.
 
 ## Important limits
 
@@ -75,7 +76,7 @@ UMI and CNV interfaces carry no biological-accuracy guarantee.
 
 Pathway/GSEA, MLE permutation inference, supplied MLE seeds, and operational Metal/GPU execution are deferred.
 Linux, Windows, Intel Mac, and universal binaries are unsupported.
-See the [manual's scope and interpretation sections](docs/MAGeCKrs_User_Manual.md#scientific-interpretation).
+See the [manual's scope and interpretation sections](docs/MAGeCKrs_User_Manual.pdf).
 
 ## Requirements
 
@@ -132,7 +133,7 @@ g0_1	G0	113	0	97
 ```
 
 COUNT also writes normalized counts, physical-read QC, and run information.
-Use the [complete manual](docs/MAGeCKrs_User_Manual.md) for RRA, MLE, combined run, UMI, unmapped output, and CNV examples.
+Use the [complete manual](docs/MAGeCKrs_User_Manual.pdf) for RRA, MLE, combined run, UMI, unmapped output, and CNV examples.
 Use fresh prefixes for all workflows.
 Ordinary COUNT can overwrite earlier files.
 

@@ -1,0 +1,5 @@
+sample	baseline	treatment
+ctrl_1	1	0
+ctrl_2	1	0
+treat_1	1	1
+treat_2	1	1

@@ -1,0 +1,1 @@
+Gene	sgRNA	A|beta	A|z	A|p-value	A|fdr	A|wald-p-value	A|wald-fdr	B|beta	B|z	B|p-value	B|fdr	B|wald-p-value	B|wald-fdr

@@ -1,0 +1,106 @@
+[package]
+name = "mageckrs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Fast Rust reimplementation of MAGeCK CRISPR screen analysis, optimized for Apple Silicon"
+license = "MIT"
+repository = "https://github.com/Yoonecorn/mageckrs"
+# Target: macOS Apple Silicon only. See build.rs — panics on non-macOS targets.
+
+[lib]
+name = "mageckrs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mageckrs"
+path = "src/main.rs"
+
+# ─── Features ────────────────────────────────────────────────────────────────
+# `accelerate` is always active on macOS (default); links Apple Accelerate framework.
+# `metal` is opt-in; links Metal + Foundation; enables GPU permutation FDR.
+# Never add a Linux-compatible fallback feature — this project is macOS Apple Silicon only.
+[features]
+default = ["accelerate"]
+accelerate = []           # Signals Accelerate is linked; used by build.rs cfg emission
+metal = ["dep:metal"]     # Optional Metal GPU path; GpuPermuter::new() always returns Option<Self>
+
+# ─── Runtime Dependencies ─────────────────────────────────────────────────────
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# FASTQ streaming (zero-copy)
+needletail = "0.5"
+
+# CPU parallelism
+rayon = "1"
+
+# Statistical distributions (Beta, NB, Chi²)
+# Used by stats::beta_cdf and mageck_test::sgrna_pvalue
+statrs = "0.17"
+
+# Intra-file FASTQ parallelism (Phase 7: reader→channel→workers)
+crossbeam-channel = "0.5"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Metal GPU bindings — only pulled in when `metal` feature is active
+# Verify current stable version on crates.io before starting Phase 8
+metal = { version = "0", optional = true }
+
+# ─── Dev / Test Dependencies ──────────────────────────────────────────────────
+[dev-dependencies]
+# Real temporary files for integration tests
+tempfile = "3"
+
+# Property-based tests for PackedDna encode/decode round-trips
+# Used in tests/packed_dna_tests.rs
+proptest = "1"
+
+# Benchmark harness
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# ─── Benchmark Targets ────────────────────────────────────────────────────────
+# Each bench file must contain `fn main()` or use criterion macros.
+# All benchmark files live in benches/; shared utilities in benches/bench_utils.rs.
+[[bench]]
+name = "count_benchmark"
+harness = false
+
+[[bench]]
+name = "rra_benchmark"
+harness = false
+
+[[bench]]
+name = "mle_benchmark"
+harness = false
+
+[[bench]]
+name = "vdsp_benchmark"
+harness = false
+
+# ─── Build Profiles ───────────────────────────────────────────────────────────
+[profile.release]
+# Maximum optimization: LTO, single codegen unit, abort on panic, strip symbols.
+# Always use `cargo build --release` for benchmarks and production.
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.bench]
+# Inherits release optimizations but retains debug info for Instruments/samply profiling.
+# Use `cargo bench` which automatically selects this profile.
+inherits = "release"
+debug = true
+strip = false
+
+# ─── Notes for Agents ─────────────────────────────────────────────────────────
+# 1. Do not add a [target.x86_64-apple-darwin] or [target.aarch64-unknown-linux-gnu] section.
+# 2. Do not add cfg(not(feature = "accelerate")) gating anywhere in source code.
+# 3. The `accelerate` feature does not add a Rust crate dependency — Accelerate is a
+#    macOS system framework linked by build.rs via `cargo:rustc-link-lib=framework=Accelerate`.
+# 4. If adding a new dependency, check it compiles on aarch64-apple-darwin before committing.

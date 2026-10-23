@@ -1,0 +1,4 @@
+Samples	baseline	A	B
+Day0	1	0	0
+TreatA	1	1	0
+TreatB	1	0	1

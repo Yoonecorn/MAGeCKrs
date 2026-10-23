@@ -1,0 +1,20 @@
+# .cargo/config.toml — MAGeCKrs
+#
+# Pins the default build target to Apple Silicon macOS.
+# This prevents agents from accidentally building for x86-64 or Linux.
+#
+# If cargo complains about the target not being installed:
+#   rustup target add aarch64-apple-darwin
+#
+# Do NOT add a [target.x86_64-apple-darwin] section.
+# Do NOT add a [target.aarch64-unknown-linux-gnu] section.
+# This project does not support those targets.
+
+[build]
+target = "aarch64-apple-darwin"
+
+[target.aarch64-apple-darwin]
+# target-cpu=native enables LLVM to autovectorize for the exact Apple Silicon
+# microarchitecture in the development machine (M1/M2/M3/M4).
+# This is correct because we never cross-compile for a different ARM64 chip.
+rustflags = ["-C", "target-cpu=native"]

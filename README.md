@@ -36,10 +36,7 @@ No compiled executable or application is distributed.
 
 ## Performance overview
 
-These observations describe the tested datasets, hardware, and configurations.
-Read the PC-9 RRA stage context first, then the separate complete-workflow comparisons.
-
-The complete benchmark methods, scientific comparisons, and interpretation limits are available in the [MAGeCKrs Manuscript](docs/MAGeCKrs_Manuscript.pdf).
+These observations apply only to the tested datasets, hardware, and configurations. Read the PC-9 RRA stage context first, followed by the separate complete-workflow comparisons. See the [MAGeCKrs Manuscript](docs/MAGeCKrs_Manuscript.pdf) for the complete methods, scientific comparisons, and interpretation limits.
 
 **PC-9 RRA COUNT-stage context**
 

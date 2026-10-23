@@ -1,0 +1,1002 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=21mm,headheight=14pt,headsep=9mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{lmroman10-regular.otf}[BoldFont=lmroman10-bold.otf,ItalicFont=lmroman10-italic.otf]
+\setsansfont{lmroman10-regular.otf}[BoldFont=lmroman10-bold.otf]
+\setmonofont{lmmono10-regular.otf}[BoldFont=lmmonolt10-bold.otf,ItalicFont=lmmono10-italic.otf]
+\usepackage{microtype,graphicx,xcolor,longtable,booktabs,array,amsmath,amssymb}
+\usepackage{xurl}
+\usepackage[unicode,colorlinks=true,bookmarksopen=true,bookmarksnumbered=true]{hyperref}
+\definecolor{ManualBlue}{HTML}{234A67}
+\definecolor{ManualTeal}{HTML}{276C6B}
+\definecolor{ManualAmber}{HTML}{8B5D25}
+\definecolor{ManualInk}{HTML}{20303D}
+\hypersetup{pdftitle={MAGeCKrs User Manual},pdfauthor={Yoon Sing Yap},pdfsubject={MAGeCKrs 0.1.0 source-only user manual},linkcolor=ManualBlue,urlcolor=ManualTeal,citecolor=ManualBlue}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\renewcommand{\arraystretch}{1.16}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\providecommand{\tightlist}{\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}}
+\newsavebox{\manualbox}
+\newenvironment{manualcallout}[2]{\par\medskip\begingroup\colorlet{CalloutAccent}{#2}\setlength{\fboxsep}{9pt}\begin{lrbox}{\manualbox}\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}\color{ManualInk}\textbf{\textcolor{CalloutAccent}{#1}}\par\smallskip}{\end{minipage}\end{lrbox}\noindent\fcolorbox{CalloutAccent!55}{CalloutAccent!5}{\usebox{\manualbox}}\endgroup\par\medskip}
+\makeatletter
+\def\verbatim@font{\normalfont\ttfamily\fontsize{8.6}{10.8}\selectfont}
+\renewcommand\section{\@startsection{section}{1}{\z@}{-3.2ex plus -1ex minus -.2ex}{1.2ex plus .2ex}{\normalfont\Large\bfseries\color{ManualBlue}}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{-2.5ex plus -.8ex minus -.2ex}{.8ex plus .2ex}{\normalfont\large\bfseries\color{ManualBlue}}}
+\def\ps@manual{\def\@oddhead{\small\sffamily\textcolor{ManualBlue}{MAGeCKrs 0.1.0\hfill User manual}}\let\@evenhead\@oddhead\def\@oddfoot{\small\hfil\thepage\hfil}\let\@evenfoot\@oddfoot}
+\makeatother
+\pagestyle{manual}
+\raggedbottom
+\begin{document}
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{20mm}
+{\Large\sffamily\textcolor{ManualBlue}{MAGeCKrs}\par}
+\vspace{14mm}
+{\Huge\bfseries User Manual\par}
+\vspace{8mm}
+{\Large Guide counting and gene-level analysis\par}
+\vspace{20mm}
+{\large Yoon Sing Yap\par}
+\vspace{8mm}
+Software version 0.1.0\par
+Generated 23 October 2026\par
+\vspace{12mm}
+\begin{manualcallout}{Release scope}{ManualBlue}
+Source-only software for Apple Silicon macOS. Build the executable locally. No compiled executable or application is distributed.
+\end{manualcallout}
+\vfill
+\href{https://github.com/Yoonecorn/MAGeCKrs}{Repository}\quad\textcolor{ManualBlue}{|}\quad
+\href{https://github.com/Yoonecorn/MAGeCKrs/releases/tag/v0.1.0}{Version 0.1.0 source release}\par
+\small MIT License. Third-party notices remain separate.
+\end{titlepage}
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\section{Release scope}\label{release-scope}
+
+MAGeCKrs 0.1.0 is a source-only release. Users build the executable locally. The project does not distribute a compiled executable or a macOS application. The supported target is \texttt{\small aarch64-\allowbreak{}apple-\allowbreak{}darwin}. A source build does not require an Apple Developer ID. The project does not provide a signed or notarized binary package.
+
+This manual describes software version 0.1.0. Documentation on the \texttt{\small main} branch can be newer than the \texttt{\small v0.\allowbreak{}1.\allowbreak{}0} source tag. The tag is the fixed software reference.
+
+\begin{manualcallout}{Important}{ManualBlue}
+
+Commands in this manual run from the repository root unless a step states otherwise. Use a new output prefix for each analysis. Retain the input files and the complete command with each result.
+
+\end{manualcallout}
+
+\section{Introduction}\label{introduction}
+
+MAGeCKrs provides guide counting and gene-level analysis for pooled CRISPR screens. COUNT maps FASTQ reads to a guide library. The \texttt{\small test} command performs directional robust rank aggregation (RRA). The \texttt{\small mle} command fits a design matrix and computes ordinary Wald inference. The \texttt{\small run} command joins COUNT and RRA in one workflow.
+
+\includegraphics[width=\linewidth]{assets/mageckrs-workflows.png}
+
+The diagram shows data flow. It does not show runtime or biological accuracy.
+
+\section{Platform and prerequisites}\label{platform-and-prerequisites}
+
+Use an Apple Silicon Mac with macOS. Install Git. Install a Rust toolchain that provides Cargo. Install the Apple command-line developer tools. Use a terminal with a POSIX-compatible shell.
+
+The source has been validated with Rust 1.98.0. The package declares Rust 1.75 as its minimum version. That minimum has not been independently qualified. Builds link dynamically to macOS system libraries and Apple Accelerate. The repository selects Apple Silicon as the default target. Its compiler configuration uses \texttt{\small target-\allowbreak{}cpu=native}.
+
+Check the installed tools before building.
+
+\begin{verbatim}
+rustc --version
+cargo --version
+git --version
+xcode-select -p
+\end{verbatim}
+
+Use the \href{https://www.rust-lang.org/tools/install}{official Rust installation guide} if Rust or Cargo is missing. Use Apple developer tools for the macOS SDK and linker. Python 3 is useful for optional example checks. The core command does not require Python.
+
+\begin{manualcallout}{Platform limit}{ManualAmber}
+
+Linux, Windows, Intel Mac, and universal binaries are not supported. The optional Metal feature has compile-check coverage only. Do not treat a successful Metal build as working GPU analysis.
+
+\end{manualcallout}
+
+\section{Install from source}\label{install-from-source}
+
+Clone the fixed software tag into a new directory. Enter that directory. Build the executable with the locked dependency versions.
+
+\begin{verbatim}
+ git clone --branch v0.1.0 --depth 1 \
+   https://github.com/Yoonecorn/MAGeCKrs.git mageckrs
+ cd mageckrs
+ cargo build --release --locked
+\end{verbatim}
+
+Git access is required while the repository is private. The first Cargo build can require network access to obtain locked dependencies. The command does not upgrade the lockfile.
+
+The default executable path is \texttt{\small target/aarch64-\allowbreak{}apple-\allowbreak{}darwin/release/mageckrs}. If \texttt{\small CARGO\_\allowbreak{}TARGET\_\allowbreak{}DIR} is set, the executable is under that directory instead. Do not use an Intel build or a binary from a different project.
+
+\section{Verify the build}\label{verify-the-build}
+
+Set the executable path in the same shell that will run the examples. The path expression below supports the default Cargo target directory and an explicit \texttt{\small CARGO\_\allowbreak{}TARGET\_\allowbreak{}DIR}. Check the version. Open the root help.
+
+\begin{verbatim}
+BIN="${CARGO_TARGET_DIR:-target}/aarch64-apple-darwin/release/mageckrs"
+"$BIN" --version
+"$BIN" --help
+OUT=$(mktemp -d)
+EX=examples/campaign-c
+SMALL=examples/campaign-a
+printf '%s\n' "$OUT"
+\end{verbatim}
+
+The version output must identify \texttt{\small mageckrs 0.\allowbreak{}1.\allowbreak{}0}. \texttt{\small OUT} is a new temporary directory. \texttt{\small EX} contains the 20-base synthetic guides used by COUNT, RRA, MLE, and CNV examples. \texttt{\small SMALL} contains the 4-base synthetic guides used by UMI and grouped-read examples. Keep these shell variables for the later sections.
+
+\section{Command overview}\label{command-overview}
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+Command or interface & Purpose \\
+\midrule\endfirsthead
+\toprule
+Command or interface & Purpose \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small count} & Map grouped FASTQ reads to a guide library. \\
+\texttt{\small test} & Compare control and treatment columns with RRA. \\
+\texttt{\small run} & Count reads, then apply RRA to the raw in-memory counts. \\
+\texttt{\small mle} & Fit gene-level coefficients using a design matrix. \\
+COUNT UMI options & Count exact guide-UMI keys within an explicit file or sample scope. \\
+COUNT unmapped option & Write unmatched reads to an uncompressed FASTQ file. \\
+MLE CNV option & Correct matched coefficients after ordinary MLE inference. \\
+\texttt{\small pathway} & Reserved interface. It returns an error. \\
+\end{longtable}\endgroup
+
+Open help for each interface before preparing a new workflow. These help commands do not read analysis inputs.
+
+\begin{verbatim}
+"$BIN" count --help
+"$BIN" test --help
+"$BIN" run --help
+"$BIN" mle --help
+"$BIN" pathway --help
+\end{verbatim}
+
+\section{Input-file formats}\label{input-file-formats}
+
+Use UTF-8 text files for tables. Use tabs for TSV columns. Do not replace tabs with runs of spaces. Use the provided repository files as templates. A PDF text selection may not preserve a tab character.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+Input & Required structure \\
+\midrule\endfirsthead
+\toprule
+Input & Required structure \\
+\midrule\endhead
+\bottomrule\endfoot
+Guide library & TSV or CSV with \texttt{\small id}, \texttt{\small sequence}, and \texttt{\small gene} headers. \\
+Count table & TSV with \texttt{\small sgRNA}, \texttt{\small Gene}, and one or more sample columns. \\
+Design matrix & TSV with sample names, an intercept column, and fitted-condition columns. \\
+Control guide list & One exact guide identifier per line. \\
+CNV matrix & TSV with \texttt{\small SYMBOL} and named log2 copy-number profiles. \\
+Read input & Plain or gzip-compressed FASTQ. \\
+\end{longtable}\endgroup
+
+Count-table headers are case-sensitive. Each guide ID must be unique. Sample names must be nonempty and unique. Counts must be numeric, finite, and nonnegative. Use raw counts as analysis input. Do not feed the normalized COUNT output back as if it were a raw count table.
+
+Use exact guide IDs in control files across workflows. COUNT also accepts exact guide sequences when they resolve without ambiguity. RRA control-pool matching uses guide IDs. A sequence-only control file can therefore work for COUNT and fail in a combined run. Control normalization requires a usable control set. Do not assume that a supplied control file has the same effect under every normalization method.
+
+\section{Guide-library format}\label{guide-library-format}
+
+The required header names are \texttt{\small id}, \texttt{\small sequence}, and \texttt{\small gene}. Header matching is case-insensitive. The order of those columns can vary. The example uses the standard order.
+
+\begin{verbatim}
+id  sequence    gene
+g1  AAAA    GENE0
+g2  CCCC    GENE0
+g3  GGGG    GENE1
+\end{verbatim}
+
+This excerpt comes from the six-guide synthetic library. Guide IDs and sequences must each be unique. Sequences must contain only A, C, G, and T. Sequence case is normalized to uppercase. Gene labels can repeat across guides. Set \texttt{\small -\allowbreak{}-\allowbreak{}sgrna-\allowbreak{}len} for the intended read window. The accepted window length is 1 through 32 bases. The default is 20. The four-base example requires \texttt{\small -\allowbreak{}-\allowbreak{}sgrna-\allowbreak{}len 4}.
+
+Missing headers, duplicate guides, ambiguous sequences, and invalid bases cause errors. Do not use a guide-library table as a count table. Their header names and roles differ.
+
+\section{FASTQ grouping}\label{fastq-grouping}
+
+Each space-separated FASTQ argument defines one sample group. Commas join physical files within that group. Counts from those files are summed into one sample column. Do not put spaces after a comma inside a group argument. Quote a path that contains spaces.
+
+For example, the next command joins the first two files into \texttt{\small C1}. The third and fourth files become separate samples \texttt{\small C2} and \texttt{\small T}.
+
+\begin{verbatim}
+"$BIN" count -l "$SMALL/library.tsv" \
+  -f "$SMALL/sample-0.fastq,$SMALL/sample-1.fastq" \
+     "$SMALL/sample-2.fastq" "$SMALL/sample-3.fastq" \
+  --sample-label C1,C2,T --sgrna-len 4 --norm-method none \
+  -n "$OUT/grouped"
+head -n 3 "$OUT/grouped.count.txt"
+\end{verbatim}
+
+For guide \texttt{\small g1}, the expected counts are 10, 11, and 2. The grouping operation counts read records. It does not reconstruct paired-end molecules or ordered guide pairs. A sample label is required for each group when labels are supplied. Duplicate labels and empty group members are rejected.
+
+\section{COUNT}\label{count}
+
+\textbf{Purpose.} Map read windows to the guide library and write raw counts.
+
+\textbf{Required inputs.} A guide library and one or more FASTQ sample groups.
+
+Count the three synthetic samples. Set normalization to \texttt{\small none} so the normalized toy table has the same numeric counts. Keep the raw table for later RRA and MLE examples.
+
+\begin{verbatim}
+"$BIN" count -l "$EX/library.tsv" \
+  -f "$EX/day0.fastq" "$EX/treat-a.fastq" "$EX/treat-b.fastq" \
+  --sample-label Day0,TreatA,TreatB --norm-method none \
+  -n "$OUT/count"
+head -n 3 "$OUT/count.count.txt"
+\end{verbatim}
+
+Expected first rows:
+
+\begin{verbatim}
+sgRNA   Gene    Day0    TreatA  TreatB
+g0_0    G0  100 0   90
+g0_1    G0  113 0   97
+\end{verbatim}
+
+\textbf{Main outputs.} Raw counts, normalized counts, physical-read QC, and run information. The default normalization is \texttt{\small median} when the option is omitted. Other accepted methods are \texttt{\small total}, \texttt{\small control}, and \texttt{\small none}.
+
+\textbf{Important limits.} COUNT is serial. A positive worker request does not make it parallel. Ordinary COUNT can overwrite its earlier output files.
+
+\textbf{Expected errors.} Missing files, malformed FASTQ, duplicate labels, invalid library rows, invalid trimming, zero workers, and incomplete UMI options.
+
+\begin{manualcallout}{Warning}{ManualAmber}
+
+Use fresh prefixes even for ordinary COUNT. The stronger output protections of UMI, unmapped output, and analysis workflows do not make ordinary COUNT overwrite-safe.
+
+\end{manualcallout}
+
+\section{Trimming and matching}\label{trimming-and-matching}
+
+\texttt{\small -\allowbreak{}-\allowbreak{}trim-\allowbreak{}5 none} starts at offset 0. A nonnegative integer selects one fixed zero-based offset. \texttt{\small -\allowbreak{}-\allowbreak{}trim-\allowbreak{}5 auto} scans offsets 0 through 40 for the first exact guide match. It is not a general sequence aligner.
+
+Fixed and \texttt{\small none} offsets support \texttt{\small -\allowbreak{}-\allowbreak{}test-\allowbreak{}mismatch 0} or \texttt{\small 1}. A one-mismatch match must resolve uniquely. An exact match has priority. Automatic trimming remains exact-only even if \texttt{\small -\allowbreak{}-\allowbreak{}test-\allowbreak{}mismatch 1} is supplied. Ambiguous, unmatched, and short windows are not assigned a guide.
+
+Create a synthetic read with a two-base prefix. Count it once with a fixed offset. Count it again with automatic trimming. Compare the raw count tables.
+
+\begin{verbatim}
+printf '%s\n' '@trim-1' 'GGAAAAAA' '+' 'IIIIIIII' \
+  > "$OUT/trim.fastq"
+"$BIN" count -l "$SMALL/library.tsv" -f "$OUT/trim.fastq" \
+  --sample-label Trim --sgrna-len 4 --trim-5 2 \
+  --norm-method none -n "$OUT/fixed"
+"$BIN" count -l "$SMALL/library.tsv" -f "$OUT/trim.fastq" \
+  --sample-label Trim --sgrna-len 4 --trim-5 auto \
+  --norm-method none -n "$OUT/auto"
+cmp "$OUT/fixed.count.txt" "$OUT/auto.count.txt"
+\end{verbatim}
+
+Both commands assign the synthetic read to \texttt{\small g1}. A matching result in this toy case does not establish general equivalence of fixed and automatic trimming.
+
+\section{Exact UMI counting}\label{exact-umi-counting}
+
+\textbf{Purpose.} Count distinct guide-UMI keys instead of physical reads.
+
+\textbf{Required inputs.} A guide library, FASTQ reads, and all four UMI options. The UMI position is zero-based in the original read. The UMI length must be 1 through 64 bases. The UMI window must not overlap the selected guide window.
+
+The synthetic reads have a four-base guide and a two-base suffix UMI. Count molecules across the two physical files in the first sample.
+
+\begin{verbatim}
+"$BIN" count -l "$SMALL/library.tsv" \
+  -f "$SMALL/sample-0.fastq,$SMALL/sample-1.fastq" \
+     "$SMALL/sample-2.fastq" "$SMALL/sample-3.fastq" \
+  --sample-label C1,C2,T --sgrna-len 4 --norm-method none \
+  --umi-start 4 --umi-length 2 --umi-dedup-scope sample \
+  --umi-max-keys 6 -n "$OUT/umi-sample"
+head -n 3 "$OUT/umi-sample.count.txt"
+\end{verbatim}
+
+The expected molecule count for each guide is one per sample. For \texttt{\small file} scope, keys reset at every physical file. The first sample then has two molecules per guide. Run that alternative with a new prefix.
+
+\begin{verbatim}
+"$BIN" count -l "$SMALL/library.tsv" \
+  -f "$SMALL/sample-0.fastq,$SMALL/sample-1.fastq" \
+     "$SMALL/sample-2.fastq" "$SMALL/sample-3.fastq" \
+  --sample-label C1,C2,T --sgrna-len 4 --norm-method none \
+  --umi-start 4 --umi-length 2 --umi-dedup-scope file \
+  --umi-max-keys 6 -n "$OUT/umi-file"
+\end{verbatim}
+
+\textbf{Main outputs.} COUNT files plus \texttt{\small .\allowbreak{}umi\_\allowbreak{}summary.\allowbreak{}txt}. QC counts remain physical reads before deduplication. The molecule table and QC totals therefore measure different things.
+
+\textbf{Important limits.} UMI equality is exact uppercase A/C/G/T equality. There is no UMI clustering, error correction, quality filtering, or gene-wide collapse. The key cap limits distinct keys in the active scope. It is not a total process-memory bound. Reordering files can change which file receives credit for the first molecule.
+
+\textbf{Expected errors.} Partial option sets, overlapping windows, a short or invalid UMI on a mapped read, a zero key cap, and a new key beyond the cap. Existing output targets are rejected.
+
+\begin{manualcallout}{Interpretation limit}{ManualTeal}
+
+This interface defines exact counting rules. It does not establish biological UMI accuracy or correct sequencing errors.
+
+\end{manualcallout}
+
+\section{Unmapped-read output}\label{unmapped-read-output}
+
+\textbf{Purpose.} Retain unmatched read records for inspection.
+
+\textbf{Required inputs.} FASTQ reads and a guide library. FASTA input is rejected for this workflow because it lacks FASTQ quality data.
+
+Create one synthetic unmatched read. Add it to a sample group. Write unmapped records to a protected output prefix.
+
+\begin{verbatim}
+printf '%s\n' '@unmapped-1' 'AGAGAA' '+' 'IIIIII' \
+  > "$OUT/unmapped-input.fastq"
+"$BIN" count -l "$SMALL/library.tsv" \
+  -f "$SMALL/sample-0.fastq,$OUT/unmapped-input.fastq" \
+  --sample-label Sample --sgrna-len 4 --norm-method none \
+  --unmapped-to-file -n "$OUT/unmapped"
+cat "$OUT/unmapped.unmapped.fastq"
+\end{verbatim}
+
+\textbf{Main outputs.} COUNT files plus \texttt{\small .\allowbreak{}unmapped.\allowbreak{}fastq}. The example unmapped file contains the single read just created. The output is uncompressed FASTQ. Record order follows sample, physical file, and input record order. The plus line is written as \texttt{\small +}. No input-file tags are added to read IDs.
+
+\textbf{Important limits.} The file includes ordinary unmatched, ambiguous, and short-guide reads. A mapped UMI duplicate remains mapped and is not an unmapped record.
+
+\textbf{Expected errors.} Malformed FASTQ, invalid mapped UMI data, FASTA input, and an existing output target.
+
+\section{RRA with test}\label{rra-with-test}
+
+\textbf{Purpose.} Compare treatment and control samples in a raw count table.
+
+\textbf{Required inputs.} A count table and nonoverlapping control and treatment roles. Roles can use exact labels or zero-based sample indexes. Indexes count only sample columns, starting after \texttt{\small sgRNA} and \texttt{\small Gene}.
+
+Compare the two treatment columns with the Day0 control. Use a fixed seed and a small null-draw budget for this synthetic example.
+
+\begin{verbatim}
+"$BIN" test -k "$OUT/count.count.txt" \
+  -c Day0 -t TreatA,TreatB --norm-method none \
+  --permutation 129 --seed 0 --threads 1 -n "$OUT/rra"
+head -n 2 "$OUT/rra.gene_summary.txt"
+\end{verbatim}
+
+\textbf{Main outputs.} Gene summary, guide summary, and \texttt{\small .\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt}. Negative and positive directions have separate scores, ranks, and adjustments. A retained Control row or all-zero gene is not an additional discovery. Genes without valid guides can receive sentinel values outside the correction family.
+
+The default draw budget is 1,000. The fixed default seed is 81985529216486895. \texttt{\small -\allowbreak{}-\allowbreak{}seed} and \texttt{\small -\allowbreak{}-\allowbreak{}rra-\allowbreak{}seed} are alternatives. \texttt{\small -\allowbreak{}-\allowbreak{}permutation} and \texttt{\small -\allowbreak{}-\allowbreak{}num-\allowbreak{}permutations} are alternatives. Do not supply both spellings in either pair. \texttt{\small fdr} and \texttt{\small bh} both select directional Benjamini-Hochberg adjustment.
+
+\texttt{\small -\allowbreak{}-\allowbreak{}gene-\allowbreak{}test-\allowbreak{}fdr-\allowbreak{}threshold} is a guide p-value threshold used to choose directional RRA alpha. It does not filter output rows by gene FDR. \texttt{\small -\allowbreak{}-\allowbreak{}remove-\allowbreak{}zero} acts on normalized comparison means. With the default \texttt{\small both} policy, a guide can remain if either group passes the strict threshold. The \texttt{\small any} policy requires both groups to pass.
+
+\textbf{Important limits.} Gene ranks and effect direction do not imply identical p-values across implementations. The guide-summary probability fields can contain \texttt{\small NA}. Do not replace those values with computed gene-level inference.
+
+\textbf{Expected errors.} Unknown roles, overlapping groups, invalid thresholds, an empty usable population, unsupported adjustment methods, and an existing output target.
+
+\begin{manualcallout}{Interpretation limit}{ManualTeal}
+
+RRA p-values and FDRs are nominal rank-model diagnostics. Combine them with effect direction, guide consistency, replication, and biological validation. Universal biological calibration is not claimed.
+
+\end{manualcallout}
+
+\section{Combined COUNT-to-test run}\label{combined-count-to-test-run}
+
+\textbf{Purpose.} Count FASTQ groups and apply RRA without re-reading a count table from disk.
+
+\textbf{Required inputs.} The COUNT inputs and RRA sample roles. This command does not run MLE or the CNV adapter.
+
+Run the same synthetic count-to-RRA workflow under one prefix.
+
+\begin{verbatim}
+"$BIN" run -l "$EX/library.tsv" \
+  -f "$EX/day0.fastq" "$EX/treat-a.fastq" "$EX/treat-b.fastq" \
+  --sample-label Day0,TreatA,TreatB -c Day0 -t TreatA,TreatB \
+  --norm-method none --permutation 129 --seed 0 --threads 1 \
+  -n "$OUT/combined"
+cmp "$OUT/count.count.txt" "$OUT/combined.count.txt"
+cmp "$OUT/rra.gene_summary.txt" "$OUT/combined.gene_summary.txt"
+\end{verbatim}
+
+\textbf{Main outputs.} COUNT files and RRA summaries. COUNT metadata use \texttt{\small .\allowbreak{}count\_\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt}. RRA metadata use \texttt{\small .\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt}. The RRA stage receives raw counts. It does not receive COUNT\textquotesingle s normalized table.
+
+\textbf{Important limits.} COUNT remains serial. Worker settings apply to the analysis stage. All requested files are staged until both stages succeed. Publication uses per-file renames with best-effort rollback. It is not crash-wide atomic publication of a complete file set.
+
+\textbf{Expected errors.} COUNT or RRA input errors, a control-list mismatch between stages, and existing destination files.
+
+\section{MLE}\label{mle}
+
+\textbf{Purpose.} Estimate gene-level condition coefficients and ordinary Wald inference.
+
+\textbf{Required inputs.} A raw count table and a valid design matrix.
+
+Fit the two synthetic treatment conditions. Keep default scalar dispersion explicit in the command.
+
+\begin{verbatim}
+"$BIN" mle -k "$OUT/count.count.txt" -d "$EX/design.tsv" \
+  --norm-method none --genes-varmodeling 0 --threads 1 \
+  -n "$OUT/mle"
+head -n 2 "$OUT/mle.gene_summary.txt"
+\end{verbatim}
+
+\textbf{Main outputs.} Gene summary, guide summary, run information, and \texttt{\small .\allowbreak{}mle\_\allowbreak{}diagnostics.\allowbreak{}json}. The default \texttt{\small -\allowbreak{}-\allowbreak{}genes-\allowbreak{}varmodeling 0} uses scalar dispersion 0.01. A positive value requests the available mean-variance modeling path. That option can change the fitted model and inference. It is not a solver retry setting.
+
+The default maximum guide count is 500 per gene. Genes above the configured limit are skipped from fitting. Control genes can be excluded from primary inference. Do not assume that all input genes must appear in the primary MLE table.
+
+\textbf{Important limits.} Only ordinary Wald p-values and FDRs are computed. The columns named \texttt{\small condition|\allowbreak{}p-\allowbreak{}value} and \texttt{\small condition|\allowbreak{}fdr} are fixed 1.0 placeholders. Use \texttt{\small condition|\allowbreak{}wald-\allowbreak{}p-\allowbreak{}value} and \texttt{\small condition|\allowbreak{}wald-\allowbreak{}fdr} for computed ordinary inference. A nonconvergent planned hypothesis can stop primary output publication.
+
+\textbf{Expected errors.} Invalid sample alignment, a rank-deficient design, invalid counts, a failed planned fit, an empty eligible targeting universe, and an existing output target. Supplying MLE \texttt{\small -\allowbreak{}-\allowbreak{}seed} is an error.
+
+\section{Design-matrix format}\label{design-matrix-format}
+
+Use tab-separated columns. The first column names samples. The second column is an intercept and must contain 1.0. Each later column names a fitted condition. The first row must represent a baseline sample with zero in every fitted condition.
+
+The included synthetic design is:
+
+\begin{verbatim}
+Samples baseline    A   B
+Day0    1   0   0
+TreatA  1   1   0
+TreatB  1   0   1
+\end{verbatim}
+
+Sample names must match count-table labels exactly. The design controls the fitted sample order. It must have full column rank. Non-finite coefficients and duplicate condition names are rejected. Extra count-table samples can be excluded by design alignment. Review the recorded aligned and excluded samples. A design describes conditions; it does not create missing biological replicates.
+
+\section{CNV adapter}\label{cnv-adapter}
+
+\textbf{Purpose.} Adjust matched MLE condition betas using named copy-number profiles.
+
+\textbf{Required inputs.} The MLE inputs and a CNV TSV matrix. The first header must be \texttt{\small SYMBOL}. Each fitted condition requires an exact matching profile name. A single column is not broadcast across conditions. The matrix values are log2 copy numbers. The implementation transforms active values with base-two exponentiation.
+
+The synthetic CNV file supplies profiles \texttt{\small A} and \texttt{\small B}. Run ordinary MLE and the beta adapter under a fresh prefix.
+
+\begin{verbatim}
+"$BIN" mle -k "$OUT/count.count.txt" -d "$EX/design.tsv" \
+  --norm-method none --genes-varmodeling 0 --threads 1 \
+  --cnv-norm "$EX/cnv.tsv" -n "$OUT/cnv"
+cmp "$OUT/mle.sgrna_summary.txt" "$OUT/cnv.sgrna_summary.txt"
+\end{verbatim}
+
+\textbf{Main outputs.} MLE files plus \texttt{\small .\allowbreak{}cnv\_\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt}. Unmatched fitted genes retain their ordinary betas. Matched genes require an adequate, varying copy-number population for the correction model. The low-copy observations used by the model must not be degenerate. Duplicate gene keys, absent profiles, non-finite values, transformation overflow, and invalid fitting populations cause errors. Active profile values are checked even for extra CNV genes. Unused profile names are reported separately.
+
+\textbf{Important limits.} The adapter changes matched betas after ordinary MLE inference. It does not recompute covariance, standard errors, z statistics, p-values, FDRs, or guide efficiencies. Do not read the adjusted beta and unchanged Wald statistics as a newly fitted joint result.
+
+\begin{manualcallout}{Interpretation limit}{ManualTeal}
+
+The CNV interface has explicit numeric and output rules. It does not establish biological CNV accuracy.
+
+\end{manualcallout}
+
+\section{Threads and workers}\label{threads-and-workers}
+
+Omitting \texttt{\small -\allowbreak{}-\allowbreak{}threads} selects serial execution. \texttt{\small -\allowbreak{}-\allowbreak{}threads 1} also selects serial execution. A positive fixed integer requests a bounded CPU worker limit for RRA and MLE. The actual worker count is limited by available CPUs and useful jobs. Zero is rejected.
+
+COUNT remains serial with positive fixed workers, \texttt{\small auto}, or \texttt{\small auto:MAX}. For \texttt{\small run}, only the analysis stage can use multiple workers. Automatic policies use host observations to select a bounded worker count. They can select serial execution.
+
+Compare fixed and automatic worker policies on the synthetic RRA input.
+
+\begin{verbatim}
+"$BIN" test -k "$OUT/count.count.txt" \
+  -c Day0 -t TreatA,TreatB --norm-method none \
+  --permutation 129 --seed 0 --threads 2 -n "$OUT/fixed-workers"
+"$BIN" test -k "$OUT/count.count.txt" \
+  -c Day0 -t TreatA,TreatB --norm-method none \
+  --permutation 129 --seed 0 --threads auto:2 -n "$OUT/auto-workers"
+cmp "$OUT/fixed-workers.gene_summary.txt" \
+  "$OUT/auto-workers.gene_summary.txt"
+\end{verbatim}
+
+Use fixed workers for controlled comparisons. Automatic scheduler metadata can vary with host load. Run-information files can record input paths and host details. Review such metadata before sharing it. No CPU-energy, runtime, or memory advantage is promised by a worker setting.
+
+\section{Output files}\label{output-files}
+
+\texttt{\small PREFIX} below means the exact value supplied with \texttt{\small -\allowbreak{}n}. It is a file prefix, not a dedicated output directory. The examples put prefixes inside the fresh \texttt{\small OUT} directory.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+File suffix & Produced by and purpose \\
+\midrule\endfirsthead
+\toprule
+File suffix & Produced by and purpose \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small .\allowbreak{}count.\allowbreak{}txt} & COUNT and run: raw integer guide or molecule counts. \\
+\texttt{\small .\allowbreak{}count.\allowbreak{}normalized.\allowbreak{}txt} & COUNT and run: normalized values with four decimal places. \\
+\texttt{\small .\allowbreak{}countsummary.\allowbreak{}txt} & COUNT and run: physical-file QC. \\
+\texttt{\small .\allowbreak{}umi\_\allowbreak{}summary.\allowbreak{}txt} & UMI-enabled COUNT or run: molecule attribution by file. \\
+\texttt{\small .\allowbreak{}unmapped.\allowbreak{}fastq} & Unmapped-enabled COUNT or run: unmatched records. \\
+\texttt{\small .\allowbreak{}gene\_\allowbreak{}summary.\allowbreak{}txt} & test, run, and MLE: gene-level results with workflow-specific fields. \\
+\texttt{\small .\allowbreak{}sgrna\_\allowbreak{}summary.\allowbreak{}txt} & test, run, and MLE: guide-level fields. \\
+\texttt{\small .\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt} & Settings and execution metadata for the command or analysis stage. \\
+\texttt{\small .\allowbreak{}count\_\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt} & run: the COUNT-stage information. \\
+\texttt{\small .\allowbreak{}mle\_\allowbreak{}diagnostics.\allowbreak{}json} & MLE: inputs, fitting status, retries, exclusions, and inference populations. \\
+\texttt{\small .\allowbreak{}cnv\_\allowbreak{}run\_\allowbreak{}info.\allowbreak{}txt} & MLE with CNV: profile matching, populations, and correction details. \\
+\end{longtable}\endgroup
+
+Do not infer success from the presence of one file. Check the process exit status and diagnostic status. Protected workflows reject existing destinations. Sequential renames do not guarantee an atomic file set across a crash.
+
+\section{COUNT and UMI fields}\label{count-and-umi-fields}
+
+Raw and normalized tables begin with \texttt{\small sgRNA} and \texttt{\small Gene}. Later columns follow the sample-group order. Guide rows follow library order. Zero counts remain explicit.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+QC field & Meaning \\
+\midrule\endfirsthead
+\toprule
+QC field & Meaning \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small File} & Physical input file. \\
+\texttt{\small Label} & Sample-group label. \\
+\texttt{\small Reads} & Physical read records processed. \\
+\texttt{\small Mapped} & Reads assigned to a guide before UMI deduplication. \\
+\texttt{\small Percentage} & Mapped fraction from 0 to 1, printed to four decimal places. It is not a value from 0 to 100. \\
+\texttt{\small Zerocounts} & Guides with zero mapped reads for that physical-file summary. \\
+\end{longtable}\endgroup
+
+The UMI summary has \texttt{\small File}, \texttt{\small Label}, \texttt{\small ValidMappedReads}, \texttt{\small NewMolecules}, and \texttt{\small DuplicateMolecules}. New molecules are attributed to the first file occurrence within the active scope. The raw table contains molecule counts when UMI counting is enabled. A mapped-read total can exceed its molecule count.
+
+\section{RRA and MLE fields}\label{rra-and-mle-fields}
+
+RRA gene columns use \texttt{\small neg|\allowbreak{}} and \texttt{\small pos|\allowbreak{}} prefixes. The pipe is part of the literal column name.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+RRA gene field & Meaning \\
+\midrule\endfirsthead
+\toprule
+RRA gene field & Meaning \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small id}, \texttt{\small num} & Gene ID and guide count. \\
+\texttt{\small neg|\allowbreak{}score}, \texttt{\small pos|\allowbreak{}score} & Directional aggregation score. \\
+\texttt{\small neg|\allowbreak{}p-\allowbreak{}value}, \texttt{\small pos|\allowbreak{}p-\allowbreak{}value} & Nominal directional gene probabilities. \\
+\texttt{\small neg|\allowbreak{}fdr}, \texttt{\small pos|\allowbreak{}fdr} & Separate directional BH adjustments. \\
+\texttt{\small neg|\allowbreak{}rank}, \texttt{\small pos|\allowbreak{}rank} & One-based directional rank with deterministic ID tie breaks. \\
+\texttt{\small neg|\allowbreak{}lfc}, \texttt{\small pos|\allowbreak{}lfc} & Directional effect summary. \\
+\texttt{\small neg|\allowbreak{}goodsgrna}, \texttt{\small pos|\allowbreak{}goodsgrna} & Number of guides contributing to that directional aggregation. \\
+\end{longtable}\endgroup
+
+The RRA guide table includes raw group sums and means, \texttt{\small LFC}, control variance, a guide rank score, and direction. \texttt{\small p.\allowbreak{}low}, \texttt{\small p.\allowbreak{}high}, \texttt{\small p.\allowbreak{}twosided}, and \texttt{\small FDR} are written as \texttt{\small NA} in this guide summary. \texttt{\small adj\_\allowbreak{}var} is a zero placeholder in that summary. Do not interpret those output placeholders as computed guide inference.
+
+MLE gene columns begin with \texttt{\small Gene} and \texttt{\small sgRNA}. \texttt{\small sgRNA} in the gene table is the number of guides. For each design condition, MLE writes the following fields.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+MLE condition field & Meaning \\
+\midrule\endfirsthead
+\toprule
+MLE condition field & Meaning \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small condition|\allowbreak{}beta} & Fitted condition coefficient, or the post-MLE adjusted beta when CNV is enabled. \\
+\texttt{\small condition|\allowbreak{}z} & Ordinary Wald z statistic from MLE. \\
+\texttt{\small condition|\allowbreak{}p-\allowbreak{}value}, \texttt{\small condition|\allowbreak{}fdr} & Fixed 1.0 permutation-style placeholders. \\
+\texttt{\small condition|\allowbreak{}wald-\allowbreak{}p-\allowbreak{}value} & Computed two-sided ordinary Wald p-value. \\
+\texttt{\small condition|\allowbreak{}wald-\allowbreak{}fdr} & BH-adjusted ordinary Wald value for the eligible targeting-gene universe. \\
+\end{longtable}\endgroup
+
+The MLE guide table has \texttt{\small Gene}, \texttt{\small sgRNA}, and \texttt{\small eff}. The field \texttt{\small eff} reports the retained efficiency value. It is not a separate guide-significance test. The supported CLI path fixes efficiencies rather than estimating biological guide activity.
+
+\section{Numerical diagnostics}\label{numerical-diagnostics}
+
+MLE tests finite coefficients and valid inference at the returned vector. It checks every guide intercept and condition coefficient. It uses absolute tolerance 1e-8 and relative tolerance 1e-6. The scaled IRLS residual must be at most 1e-9. Both change and residual tests must pass on three consecutive accepted updates.
+
+Eligible same-model retries use relaxation 1.0, 0.5, and 0.25. Each attempt starts at the original initialization. Dispersion and ridge parameters remain unchanged. Each attempt permits at most 1,000 candidate updates. The coefficient bound is 100 in absolute value.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+Diagnostic item & How to use it \\
+\midrule\endfirsthead
+\toprule
+Diagnostic item & How to use it \\
+\midrule\endhead
+\bottomrule\endfoot
+\texttt{\small run\_\allowbreak{}status} & Check that the run reached \texttt{\small SUCCESS}. \\
+\texttt{\small contract\_\allowbreak{}version}, \texttt{\small contract\_\allowbreak{}sha256} & Identify the recorded numerical-rule document. \\
+\texttt{\small input\_\allowbreak{}identities} & Check the count, design, control, and CNV input identities and normalization factors. \\
+\texttt{\small parameters} & Inspect tolerances, limits, and relaxation settings. \\
+\texttt{\small planned}, \texttt{\small eligible}, \texttt{\small emitted} & Distinguish the intended population from valid primary output. \\
+\texttt{\small BH} & Inspect the eligible family size for each condition. \\
+\texttt{\small genes} & Inspect status, attempt history, coefficients, residuals, and valid Wald quantities. \\
+\texttt{\small exclusions} & Read recorded skip, fit, or inference reasons. \\
+\end{longtable}\endgroup
+
+Primary convergence and convergence after a same-model retry have different statuses. An unresolved planned fit or invalid Wald result stops new primary summary publication. The command can leave a diagnostic sidecar without primary result tables. Do not promote the last iterate from a failed fit into a result. See the \href{https://github.com/Yoonecorn/MAGeCKrs/blob/main/docs/numerical-contract.md}{public numerical contract} for further details.
+
+\begin{manualcallout}{Interpretation limit}{ManualTeal}
+
+A convergence check establishes numerical acceptance under the implemented rules. It does not prove a global optimum, biological truth, or scientific equivalence to another implementation.
+
+\end{manualcallout}
+
+\section{Reproducibility}\label{reproducibility}
+
+Record the software version and the source tag or commit. Keep the accepted raw count matrix and design matrix. Keep the library, FASTQ grouping, sample labels, trim settings, and control list. Keep CNV inputs when the adapter is used. Keep the command, exit status, standard error, and complete output set.
+
+Use explicit RRA seeds and fixed workers for controlled comparisons. Keep normalization and guide-filter settings the same when comparing results. Do not pool results from different sample groupings as if they used identical inputs. Compare scientific tables separately from variable scheduler metadata.
+
+A repeated result in the same configuration does not guarantee identical output on arbitrary future inputs or hardware. Source installation here has same-host validation. It does not establish clean-machine, older-macOS, other-chip, or minimum-Rust-version qualification.
+
+\section{Complete synthetic example sequence}\label{complete-synthetic-example-sequence}
+
+The examples in this manual use public, synthetic inputs only. No real-screen fixture is required.
+
+\begin{manualcallout}{Example}{ManualTeal}
+
+Run the setup block once in a new shell. Run COUNT before RRA, MLE, and CNV. Give each later workflow the distinct prefix shown in its section. Create a new \texttt{\small OUT} directory before repeating the sequence.
+
+\end{manualcallout}
+
+A complete route through the examples is:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Install the source and verify version 0.1.0.
+\item
+  Set \texttt{\small BIN}, \texttt{\small OUT}, \texttt{\small EX}, and \texttt{\small SMALL} in the build-verification section.
+\item
+  Run grouped COUNT and the main COUNT workflow.
+\item
+  Run fixed trimming and automatic trimming.
+\item
+  Run both explicit UMI scopes.
+\item
+  Run unmapped output.
+\item
+  Run RRA and the combined workflow.
+\item
+  Run MLE and the CNV adapter.
+\item
+  Compare fixed and automatic workers.
+\item
+  Inspect the raw count rows, summaries, run information, and diagnostics.
+\end{enumerate}
+
+The expected grouped \texttt{\small g1} counts are 10, 11, and 2. With sample-scope UMI, each guide has one molecule per sample. With file-scope UMI, the first grouped sample has two molecules per guide. The unmapped example emits one unmatched record. The trimming comparison and separate/combined raw-count comparison return equal files. These checks demonstrate interface behavior on toy inputs. They do not establish biological accuracy or real-screen performance.
+
+\section{Common errors}\label{common-errors}
+
+A successful command returns exit status 0. Clap syntax errors normally return 2. Runtime configuration or analysis errors return nonzero, usually 1. Read the complete error message before repeating a command.
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+Symptom & Cause and next action \\
+\midrule\endfirsthead
+\toprule
+Symptom & Cause and next action \\
+\midrule\endhead
+\bottomrule\endfoot
+Executable not found & Check the Apple Silicon target path and \texttt{\small CARGO\_\allowbreak{}TARGET\_\allowbreak{}DIR}. \\
+Missing library header & Use \texttt{\small id}, \texttt{\small sequence}, and \texttt{\small gene} in the guide library. \\
+Invalid count-table header & Use exact \texttt{\small sgRNA} and \texttt{\small Gene}, then unique sample names. \\
+Sample-label count mismatch & Supply one label per space-separated FASTQ group. \\
+No reads map as expected & Check guide length, orientation, offset, matching mode, and grouping. Do not infer a library mismatch from a single QC percentage alone. \\
+Partial UMI configuration & Supply all four UMI options together. \\
+UMI key limit reached & Review the explicit scope and distinct-key cap. No approximate fallback is used. \\
+Existing output target & Select a new prefix. Retain earlier results. \\
+Invalid design or dependent columns & Correct labels, intercept values, first-row baseline, and column rank. \\
+\texttt{\small EMPTY\_\allowbreak{}ELIGIBLE\_\allowbreak{}UNIVERSE} & Inspect control exclusions and guide limits. A zero-inference population is not a successful null result. \\
+Planned fit or Wald failure & Read \texttt{\small .\allowbreak{}mle\_\allowbreak{}diagnostics.\allowbreak{}json}. Do not treat partial sidecars as primary results. \\
+Missing CNV profile & Match each fitted condition name exactly. Do not rely on profile broadcasting. \\
+CNV population failure & Check matched genes, active log2 values, variation, and low-copy observations. \\
+\texttt{\small -\allowbreak{}-\allowbreak{}threads 0} & Use a positive fixed worker limit or omit the option. \\
+MLE seed or pathway error & These interfaces are deferred. Remove the unsupported request. \\
+\end{longtable}\endgroup
+
+The following command intentionally fails because wildcard counting is retired. It must not produce a successful analysis.
+
+\begin{verbatim}
+"$BIN" count -l "$EX/library.tsv" -f "$EX/day0.fastq" \
+  --count-n -n "$OUT/rejected-count"
+\end{verbatim}
+
+The next command intentionally fails because MLE permutation seeding is unsupported.
+
+\begin{verbatim}
+"$BIN" mle -k "$OUT/count.count.txt" -d "$EX/design.tsv" \
+  --seed 1 -n "$OUT/rejected-mle"
+\end{verbatim}
+
+The pathway command also returns an error before analysis. The placeholder GMT path is not read by this reserved interface.
+
+\begin{verbatim}
+"$BIN" pathway -g "$OUT/rra.gene_summary.txt" \
+  --gmt-file "$OUT/not-read.gmt" -n "$OUT/rejected-pathway"
+\end{verbatim}
+
+\section{Supported and deferred features}\label{supported-and-deferred-features}
+
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.57\linewidth}@{}}
+\toprule
+Area & Version 0.1.0 disposition \\
+\midrule\endfirsthead
+\toprule
+Area & Version 0.1.0 disposition \\
+\midrule\endhead
+\bottomrule\endfoot
+COUNT, RRA/test, default scalar MLE & Implemented CPU workflows. \\
+Fixed CPU workers & Deterministic tested analysis execution; COUNT remains serial. \\
+Automatic workers & Opt-in host-dependent policy and scheduler metadata. \\
+Exact UMI, unmapped output, combined run & Implemented interfaces with the documented scope and output rules. \\
+CNV & Post-MLE beta adapter; inference is retained from ordinary MLE. \\
+Pathway/GSEA & Reserved command. No pathway result is computed. \\
+MLE permutation inference & Deferred; output columns remain placeholders. \\
+MLE seed & Supplying the option returns an error. \\
+Metal/GPU & Compile-check evidence only; operational acceleration is not qualified. \\
+Platforms & Apple Silicon macOS only. \\
+Distribution & Source only. No executable, app, or binary archive. \\
+\end{longtable}\endgroup
+
+\section{Scientific interpretation}\label{scientific-interpretation}
+
+Read RRA ranks together with direction, guide agreement, replication, and biological context. Do not interpret nominal p-values as a universal biological false-discovery guarantee. A retained control or all-zero row is an output convention, not a new hit.
+
+Read MLE\textquotesingle s computed Wald columns separately from its permutation-style placeholders. Read CNV-adjusted betas separately from unchanged ordinary inference. Numerical acceptance does not establish biological truth. UMI and CNV interface checks do not establish biological accuracy.
+
+\section{Citation}\label{citation}
+
+Yap, Yoon Sing. \emph{MAGeCKrs}, version 0.1.0. GitHub repository, 2026. Use the structured \href{https://github.com/Yoonecorn/MAGeCKrs/blob/main/CITATION.cff}{CITATION.cff} record. The \href{https://github.com/Yoonecorn/MAGeCKrs/releases/tag/v0.1.0}{v0.1.0 source release} identifies the documented software. No DOI or preprint deposition is asserted.
+
+\section{License and third-party notices}\label{license-and-third-party-notices}
+
+MAGeCKrs uses the \href{https://github.com/Yoonecorn/MAGeCKrs/blob/main/LICENSE}{MIT License}. Copyright (c) 2026 Yoon Sing Yap. Third-party terms remain separate. Read \href{https://github.com/Yoonecorn/MAGeCKrs/blob/main/THIRD_PARTY_NOTICES.md}{THIRD\_PARTY\_NOTICES.md} and the preserved upstream notice files linked there. The documented upstream licensing-record discrepancies are not silently resolved by the project license.
+
+Use \href{https://github.com/Yoonecorn/MAGeCKrs/issues}{GitHub Issues} for bug reports and usage questions. Include the software version, command, error message, and a minimal synthetic reproducer. Do not post private inputs or unreviewed metadata.
+
+\section{Command reference appendix}\label{command-reference-appendix}
+
+The text below is the version 0.1.0 CLI help captured from the built public source. It is a syntax reference. A displayed reserved option does not establish supported execution. The workflow sections explain the important interpretation boundaries.
+
+\subsection{Root command}\label{root-command}
+
+\begin{verbatim}
+MAGeCKrs: CRISPR screen analysis for macOS Apple Silicon. COUNT, explicitly scoped exact UMI
+  counting, COUNT-to-test run, RRA/test and classical MLE are supported. MLE, test and run
+  accept deterministic CPU worker limits; COUNT remains serial under every worker policy.
+  Auto is opt-in; use fixed workers for publication. RRA p-values and FDRs are nominal
+  rank-model diagnostics: interpret with rank, effect direction, guide consistency,
+  reproducibility and biological validation. Universal biological calibration is not claimed.
+  MLE permutation-style columns are placeholders; CNV corrects matched betas without
+  recomputing uncertainty or significance. Pathway is reserved and returns an error. Metal
+  execution and static distribution are deferred.
+
+Usage: mageckrs <COMMAND>
+
+Commands:
+  count    Count sgRNAs from FASTQ files using a reference library
+  test     Test for gene essentiality/enrichment using Robust Rank Aggregation (RRA)
+  mle      Perform Maximum Likelihood Estimation (MLE) using a design matrix
+  pathway  Unsupported: reserved for future pathway enrichment (returns an error)
+  run      Count FASTQ samples then test their raw counts with RRA
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+\end{verbatim}
+
+\subsection{count}\label{count-1}
+
+\begin{verbatim}
+Count sgRNAs from FASTQ files using a reference library
+
+Usage: mageckrs count [OPTIONS] --list-seq <LIST_SEQ> --fastq <FASTQ>... --output-prefix
+  <OUTPUT_PREFIX>
+
+Options:
+  -l, --list-seq <LIST_SEQ>
+          Library file (TSV/CSV) containing sgRNA ID, sequence, and gene name [alias:
+            --library]
+  -f, --fastq <FASTQ>...
+          One or more FASTQ sample groups (comma-separated technical replicates within each
+            argument)
+  -n, --output-prefix <OUTPUT_PREFIX>
+          Prefix for output files
+      --sample-label <SAMPLE_LABEL>
+          Sample labels corresponding to the sample groups (comma-separated)
+      --norm-method <NORM_METHOD>
+          Normalization method (median, total, control, none) [default: median] [possible
+            values: median, total, control, none]
+      --control-sgrna <CONTROL_SGRNA>
+          Optional control sgRNA list file for control normalization
+      --sgrna-len <SGRNA_LEN>
+          Length of sgRNA sequence (default: 20) [default: 20]
+      --trim-5 <MODE>
+          Guide start: auto (first exact match at offsets 0..=40), none (offset 0), or
+            integer [default: none]
+      --test-mismatch <TEST_MISMATCH>
+          Mismatches: 0 or 1 at fixed/none offsets; auto always uses exact matches [default:
+            0]
+      --count-n
+          Unsupported: --count-n is retired; wildcard/ambiguous-base counting is not supported
+      --unmapped-to-file
+          Write no-match, ambiguous and short-guide records to `<prefix>.unmapped.fastq`
+      --umi-start <UMI_START>
+          Absolute zero-based UMI start in the original FASTQ sequence (requires all UMI
+            options)
+      --umi-length <UMI_LENGTH>
+          Fixed UMI length, 1..=64; exact A/C/G/T equality, no clustering
+      --umi-dedup-scope <UMI_DEDUP_SCOPE>
+          Required UMI scope: file resets per physical file; sample spans grouped files
+            [possible values: file, sample]
+      --umi-max-keys <UMI_MAX_KEYS>
+          Required positive unique-key cap per active scope; not a process-memory bound
+      --threads <THREADS>
+          Worker policy N, auto, or auto:MAX; COUNT is qualified only for serial execution
+  -h, --help
+          Print help
+\end{verbatim}
+
+\subsection{test}\label{test}
+
+\begin{verbatim}
+Test for gene essentiality/enrichment using Robust Rank Aggregation (RRA)
+
+Usage: mageckrs test [OPTIONS] --count-table <COUNT_TABLE> --output-prefix <OUTPUT_PREFIX>
+
+Options:
+  -k, --count-table <COUNT_TABLE>
+          sgRNA count table file
+  -t, --treatment-id <TREATMENT_ID>
+          Treatment sample label(s) or 0-based column indices (comma-separated)
+  -c, --day0-label <DAY0_LABEL>
+          Control / Day0 sample label(s) or 0-based column indices (comma-separated) [alias:
+            --control-id]
+  -n, --output-prefix <OUTPUT_PREFIX>
+          Prefix for output files
+      --norm-method <NORM_METHOD>
+          Normalization method (median, total, control, none) [default: median] [possible
+            values: median, total, control, none]
+      --control-sgrna <CONTROL_SGRNA>
+          Optional control sgRNA list file
+      --gene-test-fdr-threshold <GENE_TEST_FDR_THRESHOLD>
+          Guide p-value threshold for directional RRA alpha selection; does not filter output
+            [default: 0.25]
+      --adjust-method <ADJUST_METHOD>
+          P-value adjustment: fdr or bh (both apply Benjamini-Hochberg) [default: fdr]
+      --permutation <PERMUTATION>
+          Number of permutations for RRA FDR calculation [default: 1000]
+      --num-permutations <NUM_PERMUTATIONS>
+          Number of RRA permutations (default: 1000); alternative to --permutation
+      --rra-seed <RRA_SEED>
+          RRA permutation seed (default: 0x0123456789abcdef = 81985529216486895; enter
+            decimal u64)
+      --remove-zero <REMOVE_ZERO>
+          Remove guides by normalized means: any requires both groups to pass; both requires
+            either [default: both] [possible values: none, control, treatment, any, both]
+      --remove-zero-threshold <REMOVE_ZERO_THRESHOLD>
+          Strict normalized-mean threshold used by --remove-zero [default: 0]
+      --seed <SEED>
+          Alternative to --rra-seed; fixed default 81985529216486895 (decimal u64 input)
+      --threads <THREADS>
+          Worker limit N, auto, or auto:MAX; omitted or 1 is serial; auto is opt-in
+  -h, --help
+          Print help
+\end{verbatim}
+
+\subsection{run}\label{run}
+
+\begin{verbatim}
+Count FASTQ samples then test their raw counts with RRA
+
+Usage: mageckrs run [OPTIONS] --list-seq <LIST_SEQ> --fastq <FASTQ>... --output-prefix
+  <OUTPUT_PREFIX>
+
+Options:
+  -l, --list-seq <LIST_SEQ>
+          Library file (TSV/CSV) containing sgRNA ID, sequence, and gene name [alias:
+            --library]
+  -f, --fastq <FASTQ>...
+          FASTQ sample groups; comma-separated technical replicates within each argument
+  -t, --treatment-id <TREATMENT_ID>
+          Treatment sample label(s) or indices (comma-separated)
+  -c, --day0-label <DAY0_LABEL>
+          Control / Day0 sample label(s) or indices (comma-separated) [alias: --control-id]
+  -n, --output-prefix <OUTPUT_PREFIX>
+          Prefix for output files
+      --sample-label <SAMPLE_LABEL>
+          Labels corresponding to FASTQ sample groups (comma-separated)
+      --norm-method <NORM_METHOD>
+          Normalization method (median, total, control, none) [default: median] [possible
+            values: median, total, control, none]
+      --control-sgrna <CONTROL_SGRNA>
+          Optional control sgRNA list file
+      --sgrna-len <SGRNA_LEN>
+          Length of sgRNA sequence (default: 20) [default: 20]
+      --trim-5 <MODE>
+          Guide start: auto (first exact offset 0..=40), none (0), or integer [default: none]
+      --test-mismatch <TEST_MISMATCH>
+          Mismatches: 0 or 1 at fixed/none offsets; auto remains exact-only [default: 0]
+      --count-n
+          Unsupported: --count-n is retired; wildcard/ambiguous-base counting is not supported
+      --unmapped-to-file
+          Write unmapped FASTQ records with protected publication
+      --umi-start <UMI_START>
+          Absolute zero-based UMI start in the original FASTQ sequence (requires all UMI
+            options)
+      --umi-length <UMI_LENGTH>
+          Fixed UMI length, 1..=64; exact A/C/G/T equality, no clustering
+      --umi-dedup-scope <UMI_DEDUP_SCOPE>
+          Required UMI scope: file resets per physical file; sample spans grouped files
+            [possible values: file, sample]
+      --umi-max-keys <UMI_MAX_KEYS>
+          Required positive unique-key cap per active scope; not a process-memory bound
+      --permutation <PERMUTATION>
+          Number of permutations for RRA FDR calculation [default: 1000]
+      --seed <SEED>
+          RRA seed (decimal u64); omitted uses the fixed existing test default
+      --threads <THREADS>
+          RRA worker limit N, auto, or auto:MAX; counting remains serial
+  -h, --help
+          Print help
+\end{verbatim}
+
+\subsection{mle}\label{mle-1}
+
+\begin{verbatim}
+Perform Maximum Likelihood Estimation (MLE) using a design matrix
+
+Usage: mageckrs mle [OPTIONS] --count-table <COUNT_TABLE> --design-matrix <DESIGN_MATRIX>
+  --output-prefix <OUTPUT_PREFIX>
+
+Options:
+  -k, --count-table <COUNT_TABLE>
+          sgRNA count table file
+  -d, --design-matrix <DESIGN_MATRIX>
+          Design matrix file (TSV)
+  -n, --output-prefix <OUTPUT_PREFIX>
+          Prefix for output files
+      --norm-method <NORM_METHOD>
+          Normalization method (median, total, control, none) [default: median] [possible
+            values: median, total, control, none]
+      --max-sgrnas-per-gene <MAX_SGRNAS_PER_GENE>
+          Skip fitting genes with more guides than this limit (must be >= 1) [default: 500]
+      --genes-varmodeling <GENES_VARMODELING>
+          Number of genes used to fit the mean-variance dispersion model (default: 0, scalar
+            alpha=0.01). Set to 2000 to match the MAGeCK standalone MLE entry point behavior.
+            [default: 0]
+      --control-sgrna <CONTROL_SGRNA>
+          Control guide IDs for control normalization; unused with other normalization methods
+      --cnv-norm <CNV_NORM>
+          Log2 CNV TSV: SYMBOL and exact design-condition profiles; correct betas after MLE
+      --threads <THREADS>
+          Worker limit N, auto, or auto:MAX; omitted or 1 is serial; auto is opt-in
+      --seed <SEED>
+          Unsupported: MLE permutations are deferred (supplying this option errors)
+  -h, --help
+          Print help
+\end{verbatim}
+
+\subsection{pathway}\label{pathway}
+
+\begin{verbatim}
+Unsupported: reserved for future pathway enrichment (returns an error)
+
+Usage: mageckrs pathway [OPTIONS] --gene-summary <GENE_SUMMARY> --gmt-file <GMT_FILE>
+  --output-prefix <OUTPUT_PREFIX>
+
+Options:
+  -g, --gene-summary <GENE_SUMMARY>    Gene summary file (.gene_summary.txt) from mageckrs
+    test or mle
+      --gmt-file <GMT_FILE>            GMT format pathway database file
+  -n, --output-prefix <OUTPUT_PREFIX>  Prefix for output files
+      --method <METHOD>                Pathway enrichment method (rra, gsea, both) [default:
+        both] [possible values: both, rra, gsea]
+      --permutation <PERMUTATION>      Number of permutations for pathway statistical testing
+        [default: 1000]
+      --seed <SEED>                    Reserved seed; this command is unsupported
+      --threads <THREADS>              Reserved worker count; this command is unsupported
+  -h, --help                           Print help
+
+All pathway options are reserved. This command returns a configuration error before reading
+  inputs or writing outputs.
+\end{verbatim}
+
+\end{document}

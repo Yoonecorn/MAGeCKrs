@@ -1,59 +1,127 @@
 # MAGeCKrs
 
-MAGeCKrs 0.1.0 provides CRISPR screen analysis from Rust source on macOS Apple Silicon (`aarch64-apple-darwin`). The crate, library and command are `mageckrs`.
+Rust workflows for guide counting and gene-level analysis of pooled CRISPR screens.
 
-This is a source-only release under the [MIT License](LICENSE), Copyright (c) 2026 Yoon Sing Yap. No executable or application is distributed. [Citation metadata](CITATION.cff) and [third-party notices](THIRD_PARTY_NOTICES.md) accompany the source.
+**MAGeCKrs 0.1.0 is a source-only release for Apple Silicon macOS.**
+Build the executable locally.
+No compiled executable or application is distributed.
+[Current release: v0.1.0](https://github.com/Yoonecorn/MAGeCKrs/releases/tag/v0.1.0).
 
-## Build from source
+## Documentation
 
-Install Rust/Cargo and Apple command-line developer tools on an Apple Silicon Mac. The release has been validated with Rust 1.98.0; the declared minimum Rust version has not been independently qualified.
+- [User manual: Markdown](docs/MAGeCKrs_User_Manual.md): read online, including complete workflows and the command reference.
+- [User manual: PDF](docs/MAGeCKrs_User_Manual.pdf): numbered sections, contents, and linked instructions.
+- [Synthetic examples](examples/campaign-a/README.md): small inputs and expected counts.
+- [Numerical contract](docs/numerical-contract.md): fitting and inference acceptance rules.
 
+## What MAGeCKrs does
+
+- Counts guides from plain or gzip FASTQ with explicit sample grouping.
+- Supports fixed offsets, automatic exact-match trimming, and unique one-mismatch matching at fixed offsets.
+- Counts exact guide-UMI keys with an explicit deduplication scope.
+- Writes unmatched FASTQ records on request.
+- Runs RRA comparisons and classical MLE with ordinary Wald inference.
+- Joins COUNT and RRA in `run`.
+- Applies an optional post-MLE CNV beta adapter.
+
+| Interface | Main input and result |
+|---|---|
+| `count` | Library and FASTQ groups to raw counts and QC. |
+| `test` | Count table and sample roles to directional RRA summaries. |
+| `run` | COUNT then RRA from raw counts in one workflow. |
+| `mle` | Count table and design matrix to coefficients and ordinary Wald results. |
+| UMI / unmapped / CNV options | Explicit opt-in interfaces described in the manual. |
+
+## Important limits
+
+COUNT remains serial under all worker policies.
+RRA, run analysis, and MLE support CPU worker limits.
+RRA significance values are nominal rank-model diagnostics, not a universal biological false-discovery guarantee.
+MLE permutation-style columns remain 1.0 placeholders.
+CNV adjusts matched betas without recomputing uncertainty or significance.
+Numerical convergence does not prove biological truth.
+UMI and CNV interfaces carry no biological-accuracy guarantee.
+
+Pathway/GSEA, MLE permutation inference, supplied MLE seeds, and operational Metal/GPU execution are deferred.
+Linux, Windows, Intel Mac, and universal binaries are unsupported.
+See the [manual's scope and interpretation sections](docs/MAGeCKrs_User_Manual.md#scientific-interpretation).
+
+## Requirements
+
+Use an Apple Silicon Mac with Git, Rust/Cargo, and Apple command-line developer tools.
+Rust 1.98.0 is the validated toolchain.
+The declared minimum Rust version has not been independently qualified.
+Builds link dynamically to macOS system and Accelerate libraries.
+Building from source does not require an Apple Developer ID.
+
+## Installation
+
+Clone the fixed software release into a new directory.
+Build with the locked dependencies.
+Set the executable path.
+
+<!-- command: readme-install -->
 ```sh
-git clone --branch v0.1.0 --depth 1 https://github.com/Yoonecorn/mageckrs.git
+git clone --branch v0.1.0 --depth 1 \
+  https://github.com/Yoonecorn/MAGeCKrs.git mageckrs
 cd mageckrs
 cargo build --release --locked
-PATH="$PWD/target/aarch64-apple-darwin/release:$PATH"
-mageckrs --version
-mageckrs --help
+BIN="${CARGO_TARGET_DIR:-target}/aarch64-apple-darwin/release/mageckrs"
+"$BIN" --version
 ```
 
-If `CARGO_TARGET_DIR` is set, use its `aarch64-apple-darwin/release` directory instead. Builds link dynamically to macOS system and Accelerate libraries and use `target-cpu=native`. Intel macOS, Linux, Windows and universal binaries are unsupported. Source builds do not require an Apple Developer ID, signing or notarization.
+The default executable is `target/aarch64-apple-darwin/release/mageckrs`.
+An explicit `CARGO_TARGET_DIR` changes the leading directory.
+Repository access is required while the repository is private.
 
-## Workflows
+## Quick start
 
-Implemented commands are COUNT, exact explicitly scoped UMI counting, ordered unmapped output, COUNT-to-test `run`, RRA/`test`, classical MLE and a beta-only CNV-to-MLE adapter. COUNT remains serial even when a positive fixed `--threads` limit is supplied. RRA, run analysis and per-gene MLE support deterministic CPU workers; `auto` and `auto:MAX` use host-dependent scheduler metadata. Fixed workers are preferred for reproducible workflows.
+Run from the cloned repository root in the same shell.
+Use a fresh output directory.
+The included inputs are synthetic.
 
-Runnable synthetic examples from the repository root:
-
+<!-- command: readme-count -->
 ```sh
 OUT=$(mktemp -d)
-mageckrs count -l examples/campaign-c/library.tsv -f examples/campaign-c/day0.fastq examples/campaign-c/treat-a.fastq examples/campaign-c/treat-b.fastq -n "$OUT/counts" --sample-label Day0,TreatA,TreatB
-mageckrs test -k "$OUT/counts.count.txt" -c Day0 -t TreatA,TreatB -n "$OUT/comparison"
-mageckrs mle -k "$OUT/counts.count.txt" -d examples/campaign-c/design.tsv -n "$OUT/model"
-mageckrs run -l examples/campaign-c/library.tsv -f examples/campaign-c/day0.fastq examples/campaign-c/treat-a.fastq examples/campaign-c/treat-b.fastq -n "$OUT/combined" --sample-label Day0,TreatA,TreatB -c Day0 -t TreatA,TreatB
-mageckrs mle -k "$OUT/counts.count.txt" -d examples/campaign-c/design.tsv -n "$OUT/cnv-model" --cnv-norm examples/campaign-c/cnv.tsv
+"$BIN" count -l examples/campaign-c/library.tsv \
+  -f examples/campaign-c/day0.fastq \
+     examples/campaign-c/treat-a.fastq \
+     examples/campaign-c/treat-b.fastq \
+  --sample-label Day0,TreatA,TreatB --norm-method none \
+  -n "$OUT/screen"
+head -n 3 "$OUT/screen.count.txt"
 ```
 
-## Interpretation and limitations
+Expected first rows:
 
-RRA p-values and FDRs are nominal diagnostics of the implemented rank model. Interpret them with effect direction, gene ranking, guide consistency, experimental replication and biological validation. Cross-tool outputs need not be identical; universal biological calibration and guaranteed false-discovery control are not claimed.
-
-MLE computes ordinary Wald inference. Permutation-style columns remain 1.0 placeholders. CNV correction changes matched betas without recomputing covariance, standard errors, z statistics, p-values or FDR. Same-model retries and failures are reported in diagnostic sidecars; numerical convergence does not establish biological truth.
-
-Pathway/GSEA, MLE permutation inference, supplied MLE seeds and operational GPU/Metal acceleration are deferred. Metal compile checking does not qualify GPU execution. UMI/CNV interfaces do not establish biological accuracy. Atomic publication of a complete output set across crashes is not guaranteed.
-
-See [usage and output semantics](docs/usage.md), [UMI and combined-run details](docs/public-surface/CAMPAIGN-A.md), [numerical acceptance](docs/numerical-contract.md), and the [synthetic examples](examples/campaign-a/README.md). Manuscript material and benchmark evidence are maintained separately and are not included in this code repository. No DOI or preprint deposition is asserted.
-
-## Validate
-
-```sh
-cargo test --all-targets --locked
-cargo test --test e2e_validation --locked
-cargo test --doc --locked
-cargo check --all-targets --locked
-cargo check --all-targets --features metal --locked
-cargo clippy --all-targets --locked -- -D warnings
-cargo fmt --check
+```tsv
+sgRNA	Gene	Day0	TreatA	TreatB
+g0_0	G0	100	0	90
+g0_1	G0	113	0	97
 ```
 
-The public suite uses synthetic examples and permitted support fixtures. Real-data regression fixtures and their dependent tests are excluded because redistribution rights were not established. No benchmark is run by the four empty Cargo benchmark targets.
+COUNT also writes normalized counts, physical-read QC, and run information.
+Use the [complete manual](docs/MAGeCKrs_User_Manual.md) for RRA, MLE, combined run, UMI, unmapped output, and CNV examples.
+Use fresh prefixes for all workflows.
+Ordinary COUNT can overwrite earlier files.
+
+## Validation status
+
+The version 0.1.0 public source passes 1,088 all-target tests, two separately invoked end-to-end tests, and one doctest on the tested Apple Silicon macOS host.
+Formatting, all-target checks, and Clippy with warnings as errors also pass.
+These checks establish bounded interface and numerical behavior.
+They do not establish universal biological accuracy, clean-machine installation, or other-platform support.
+The public suite uses synthetic and permitted support fixtures.
+
+## Citation
+
+Yap, Yoon Sing. *MAGeCKrs*, version 0.1.0. GitHub repository, 2026.
+See [CITATION.cff](CITATION.cff) and the [source release](https://github.com/Yoonecorn/MAGeCKrs/releases/tag/v0.1.0).
+No DOI or preprint deposition is asserted.
+
+## License and support
+
+Copyright (c) 2026 Yoon Sing Yap.
+Licensed under [MIT](LICENSE).
+[Third-party notices](THIRD_PARTY_NOTICES.md) preserve upstream terms and documented discrepancies.
+Use [GitHub Issues](https://github.com/Yoonecorn/MAGeCKrs/issues) for questions and bug reports.

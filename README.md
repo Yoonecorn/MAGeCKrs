@@ -39,6 +39,8 @@ No compiled executable or application is distributed.
 These observations describe the tested datasets, hardware, and configurations.
 Read the PC-9 RRA stage context first, then the separate complete-workflow comparisons.
 
+The complete benchmark methods, scientific comparisons, and interpretation limits are available in the [MAGeCKrs Manuscript](docs/MAGeCKrs_Manuscript.pdf).
+
 **PC-9 RRA COUNT-stage context**
 
 ![PC-9 RRA COUNT-stage component comparison: median runtime is 581.669345 s for Legacy MAGeCK and 163.834243 s for MAGeCKrs.](.github/assets/mageckrs-pc9-rra-count-stage.png)

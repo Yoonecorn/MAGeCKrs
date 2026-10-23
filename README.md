@@ -32,6 +32,37 @@ No compiled executable or application is distributed.
 | `mle` | Count table and design matrix to coefficients and ordinary Wald results. |
 | UMI / unmapped / CNV options | Explicit opt-in interfaces described in the manual. |
 
+## Performance overview
+
+These observations describe the tested datasets, hardware, and configurations.
+Read the PC-9 RRA stage context first, then the separate complete-workflow comparisons.
+
+**PC-9 RRA COUNT-stage context**
+
+![PC-9 RRA COUNT-stage component comparison: median runtime is 581.669345 s for Legacy MAGeCK and 163.834243 s for MAGeCKrs.](docs/assets/mageckrs-pc9-rra-count-stage.png)
+
+*Figure S1a.* PC-9 RRA COUNT-stage component medians are **581.669345 s for Legacy MAGeCK** and **163.834243 s for MAGeCKrs**.
+COUNT is inside the primary timing boundary.
+These component summaries are not stacked or additive, and this is not a complete-workflow comparison.
+
+**Complete-workflow runtimes**
+
+![Legacy MAGeCK versus MAGeCKrs median runtimes: PC-9 RRA 623.096344 versus 165.108136 s, runtime ratio 3.769137010; PC-9 MLE 241.969656 versus 65.914413 s, ratio 3.670967319; HCC827 MLE 237.9524685 versus 65.109550 s, ratio 3.654647721. HCC827 has high aggregate agreement, but selected scientific outputs differ.](docs/assets/mageckrs-complete-workflow-runtimes.png)
+
+*Figure 2a-c.* Median runtimes below compare **Legacy MAGeCK with MAGeCKrs**, in that order.
+Runtime ratios use Legacy MAGeCK divided by MAGeCKrs.
+
+- **a. Complete PC-9 RRA:** 623.096344 s versus 165.108136 s; observed median paired runtime ratio **3.769137010** from **three fresh pairs**.
+- **b. Complete PC-9 MLE:** 241.969656 s versus 65.914413 s; observed ratio of engine medians **3.670967319**, with **six observations per engine**.
+- **c. Complete HCC827 MLE:** 237.9524685 s versus 65.109550 s; observed ratio of engine medians **3.654647721**, with **six observations per engine**.
+
+Upper whiskers extend from the median to the observed maximum.
+They are descriptive ranges, not confidence intervals.
+The benchmark campaigns are not pooled.
+**HCC827 shows high aggregate agreement, but selected scientific outputs differ.**
+These runtime observations do not establish universal speedups, timing significance, or identical RRA or MLE scientific outputs.
+See the [user manual](docs/MAGeCKrs_User_Manual.md) for workflow instructions and interpretation limits.
+
 ## Important limits
 
 COUNT remains serial under all worker policies.

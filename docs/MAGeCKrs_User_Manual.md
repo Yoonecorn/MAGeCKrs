@@ -5,6 +5,7 @@
 **Document date:** 23 October 2026
 
 **Author:** Yoon Sing Yap
+
 **Release scope:** source only; Apple Silicon macOS
 
 [Repository](https://github.com/Yoonecorn/MAGeCKrs) | [Release v0.1.0](https://github.com/Yoonecorn/MAGeCKrs/releases/tag/v0.1.0) | [PDF edition](MAGeCKrs_User_Manual.pdf) | [README](../README.md)
@@ -123,7 +124,7 @@ Build the executable with the locked dependency versions.
  cargo build --release --locked
 ```
 
-Git access is required while the repository is private.
+Use Git to obtain the source from the repository.
 The first Cargo build can require network access to obtain locked dependencies.
 The command does not upgrade the lockfile.
 

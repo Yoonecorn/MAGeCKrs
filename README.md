@@ -72,7 +72,7 @@ BIN="${CARGO_TARGET_DIR:-target}/aarch64-apple-darwin/release/mageckrs"
 
 The default executable is `target/aarch64-apple-darwin/release/mageckrs`.
 An explicit `CARGO_TARGET_DIR` changes the leading directory.
-Repository access is required while the repository is private.
+Use Git to obtain the source from the repository.
 
 ## Quick start
 

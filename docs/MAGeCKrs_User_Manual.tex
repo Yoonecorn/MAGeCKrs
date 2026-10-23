@@ -112,7 +112,7 @@ Clone the fixed software tag into a new directory. Enter that directory. Build t
  cargo build --release --locked
 \end{verbatim}
 
-Git access is required while the repository is private. The first Cargo build can require network access to obtain locked dependencies. The command does not upgrade the lockfile.
+Use Git to obtain the source from the repository. The first Cargo build can require network access to obtain locked dependencies. The command does not upgrade the lockfile.
 
 The default executable path is \texttt{\small target/aarch64-\allowbreak{}apple-\allowbreak{}darwin/release/mageckrs}. If \texttt{\small CARGO\_\allowbreak{}TARGET\_\allowbreak{}DIR} is set, the executable is under that directory instead. Do not use an Intel build or a binary from a different project.
 
